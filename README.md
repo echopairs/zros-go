@@ -1,2 +1,2 @@
 # zros-go
-The golang version of zros
+The Go language implementation of zros
