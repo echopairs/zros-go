@@ -11,13 +11,6 @@ import (
 	"github.com/astaxie/beego/logs"
 )
 
-//type ServiceDiscovery interface {
-//	AddServiceServer() error
-//	AddServiceClient() error
-//	AddPublisher()	error
-//	AddSubscriber() error
-//}
-
 
 var stubCallShortTimeOut = 5*1000*1000
 var stubCallLongTimeOut = 3000*1000*1000
@@ -30,8 +23,8 @@ type GrpcServiceDiscovery struct {
 	lis 			net.Listener
 }
 
-func NewGrpcServiceDiscovery(address string) (*GrpcServiceDiscovery, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+func NewGrpcServiceDiscovery(masterAddress string) (*GrpcServiceDiscovery, error) {
+	conn, err := grpc.Dial(masterAddress, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +53,29 @@ func (gsd *GrpcServiceDiscovery) InvokeService(context.Context, *pb.ServiceReque
 	return nil, nil
 }
 
+func (gsd *GrpcServiceDiscovery) RegisterPublisher(context.Context, *pb.PublisherInfo) (*pb.Status, error) {
+	return nil, nil
+}
+
+func (gsd *GrpcServiceDiscovery) UnregisterPublisher(context.Context, *pb.PublisherInfo) (*pb.Status, error) {
+	return nil, nil
+}
+
+func (gsd *GrpcServiceDiscovery) RegisterServiceServer(ctx context.Context, info *pb.ServiceServerInfo) (*pb.Status, error) {
+	return nil, nil
+}
+
+func (gsd *GrpcServiceDiscovery) UnregisterServiceServer(ctx context.Context, info *pb.ServiceServerInfo) (*pb.Status, error) {
+	return nil, nil
+}
+
+func (gsd *GrpcServiceDiscovery) Ping(ctx context.Context, request *pb.PingRequest) (*pb.Status, error) {
+	return nil, nil
+}
+
 func (gsd *GrpcServiceDiscovery) serve() {
 	s := grpc.NewServer()
-	pb.RegisterServiceRPCServer(s, &GrpcServiceDiscovery{})
+	pb.RegisterServiceDiscoveryRPCServer(s, &GrpcServiceDiscovery{})
 
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
