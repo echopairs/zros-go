@@ -14,7 +14,7 @@ func ServiceCb(req *zros_example.TestServiceRequest) (*zros_example.TestServiceR
 func main() {
 
 	// 1. init & run service discovery
-	err := zros.Init("localhost:2333")
+	err := zros.Init("localhost:23333")
 	if err != nil {
 		logs.Error("zros init failed for %v", err)
 	}
@@ -27,4 +27,6 @@ func main() {
 	resType := reflect.TypeOf(zros_example.TestServiceResponse{})
 	node.AdvertiseService("test_service", reqType, resType, ServiceCb)
 
+	c := make(chan interface{})
+	_ = <- c
 }

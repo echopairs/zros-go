@@ -15,7 +15,7 @@ type ServiceServer struct {
 	node 		 *defaultNode
 }
 
-func NewServiceServer(node *defaultNode, service string, resType reflect.Type, repType reflect.Type, serviceCb interface{}) *ServiceServer{
+func NewServiceServer(node *defaultNode, service string, resType reflect.Type, reqType reflect.Type, serviceCb interface{}) *ServiceServer{
 
 	if resType.Implements(msgType) || resType.Implements(msgType) {
 		panic("NesServiceServer reqType and resType requires a proto")
@@ -28,8 +28,8 @@ func NewServiceServer(node *defaultNode, service string, resType reflect.Type, r
 	}
 	server := &ServiceServer{}
 	server.serviceName = service
-	server.resType = repType
-	server.reqType = resType
+	server.reqType = reqType
+	server.resType = resType
 	server.serviceCb = reflect.ValueOf(serviceCb)
 	server.node = node
 	return server

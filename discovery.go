@@ -11,12 +11,23 @@ import (
 	"github.com/astaxie/beego/logs"
 
 	pb "zros-go/zros_rpc"
+	"fmt"
 )
 
 
 var stubCallShortTimeOut = 5*1000*1000
 var stubCallLongTimeOut = 3000*1000*1000
 
+
+
+type DiscoveryError struct {
+	errorCode int
+	detail string
+}
+
+func (de *DiscoveryError) Error() string {
+	return de.detail
+}
 
 type GrpcServiceDiscovery struct {
 	masterRpcStub 	pb.MasterRPCClient
@@ -101,3 +112,31 @@ func (gsd *GrpcServiceDiscovery) IsConnectedToMaster() error {
 }
 
 
+// register
+func (gsd *GrpcServiceDiscovery) AddServiceServer(server *ServiceServer) (error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
+	logs.Info("AddServiceServer to master")
+	defer cancel()
+	request := &pb.ServiceServerInfo{}
+	physicalNodeInfo := &pb.PhysicalNodeInfo{}
+
+	request.ServiceName = server.GetServiceName()
+	physicalNodeInfo.AgentAddress = gsd.agentAddress
+	physicalNodeInfo.RealAddress = server.node.NodeAddress
+	logs.Info("agentAddress is %s nodeAddress is %s", gsd.agentAddress, server.node.NodeAddress)
+	physicalNodeInfo.Name = server.node.NodeName
+	request.PhysicalNodeInfo = physicalNodeInfo
+	status, err := gsd.masterRpcStub.RegisterServiceServer(ctx, request)
+
+	if err != nil {
+		logs.Error(fmt.Sprintf("AddServiceServer %s to master failed for %s", server.GetServiceName(), err.Error()))
+		return err
+	}
+
+	if status.Code != pb.Status_OK {
+		logs.Error(fmt.Sprintf("AddServiceServer %s to master failed for %s", server.GetServiceName(), status.Details))
+		return &DiscoveryError{detail:status.Details}
+
+	}
+	return nil
+}

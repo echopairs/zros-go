@@ -23,3 +23,8 @@ func TestGrpcServiceDiscovery_Spin(t *testing.T) {
 	gsd, _:= NewGrpcServiceDiscovery(masterAddress)
 	gsd.Spin()
 }
+
+//func TestGrpcServiceDiscovery_AddServiceServer(t *testing.T) {
+//	gsd, _ := NewGrpcServiceDiscovery(masterAddress)
+//	server := Ne
+//}

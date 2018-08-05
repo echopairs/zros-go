@@ -12,12 +12,12 @@ import (
 	pb "zros-go/zros_rpc"
 )
 
-
+var  _ ServiceServerManager = (*GrpcServerImpl)(nil)
 
 type ServiceServerManager interface {
-	Start() error
+	Start() (string, error)
 	Stop()
-	RegisterServer(server *IServiceServer) (error)
+	RegisterServer(server *ServiceServer) (error)
 	UnregisterServer(serviceName string) (error)
 }
 
@@ -28,16 +28,22 @@ type GrpcServerImpl struct {
 	lis  		  net.Listener
 }
 
-func (gsi *GrpcServerImpl) Start() error {
+func NewGrpcServerImpl() (*GrpcServerImpl){
+	return &GrpcServerImpl{
+		servers: make(map[string]*ServiceServer),
+	}
+}
+
+func (gsi *GrpcServerImpl) Start() (string, error) {
 	lis, err := net.Listen("tcp", "127.0.0.1:")
 	if err != nil {
 		logs.Error("GrpcServerImpl Start Listen error %v", err)
-		return err
+		return "", err
 	}
 	gsi.ServiceAddress = lis.Addr().String()
-	gsd.lis = lis
+	gsi.lis = lis
 	go gsi.serve()
-	return nil
+	return gsi.ServiceAddress, nil
 }
 
 func (gsi *GrpcServerImpl) serve() {
@@ -57,6 +63,14 @@ func (gsi *GrpcServerImpl) Stop() {
 }
 
 func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) (error) {
+	// 1. register to master first
+	gsd := GetGlobalServiceDiscovery()
+	err := gsd.AddServiceServer(server)
+	if err != nil {
+		logs.Error("AddServiceServer to master failed")
+		return err
+	}
+	// 2. register to memory
 	gsi.mutex.Lock()
 	defer gsi.mutex.Unlock()
 	serviceName := server.GetServiceName()
@@ -65,6 +79,7 @@ func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) (error) {
 		logs.Warn("%s already register", serviceName)
 	}
 	gsi.servers[serviceName] = server
+	logs.Info("RegisterServer %s ok", serviceName)
 	return nil
 }
 
@@ -83,11 +98,14 @@ func (gsi *GrpcServerImpl) InvokeService(ctx context.Context, request *pb.Servic
 	logs.Info("receiver rpc call %s ", serviceName)
 	gsi.mutex.Lock()
 	defer gsi.mutex.Unlock()
+	logs.Info(len(gsi.servers))
 	server, ok := gsi.servers[serviceName]
 	if !ok {
 		res := &pb.ServiceResponse{}
-		res.Status.Code = pb.Status_FAILED_PRECONDITION
-		res.Status.Details = "There is no server for this service " + serviceName
+		status := &pb.Status{}
+		status.Code = pb.Status_FAILED_PRECONDITION
+		status.Details = "There is no server for this service " + serviceName
+		res.Status = status
 		return res, nil
 	}
 	return server.Invoke(request)

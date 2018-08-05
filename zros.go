@@ -14,7 +14,8 @@ func Init(masterAddress string) (err error){
 	if err != nil {
 		return err
 	}
-	return nil
+	gsd.Spin()
+	return gsd.IsConnectedToMaster()
 }
 
 func GetGlobalServiceDiscovery () *GrpcServiceDiscovery {

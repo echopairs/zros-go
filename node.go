@@ -2,18 +2,23 @@ package zros_go
 
 import (
 	"reflect"
+	"fmt"
 )
 
 // *defaultNode implements Node interface
 type defaultNode struct {
 	NodeAddress 	string
 	NodeName 		string
+	ssm 			ServiceServerManager
 }
 
 func NewDefaultNode(nodeName string) *defaultNode {
-	return &defaultNode{
+	node := &defaultNode{
 		NodeName:nodeName,
 	}
+	node.ssm = NewGrpcServerImpl()
+	node.Spin()
+	return node
 }
 
 func (node *defaultNode) SetNodeAddress(nodeAddress string) {
@@ -21,11 +26,23 @@ func (node *defaultNode) SetNodeAddress(nodeAddress string) {
 }
 
 func (node *defaultNode) Spin() {
-
+	realAddress, err := node.ssm.Start()
+	if err != nil {
+		panic(fmt.Sprintf("Node Spin failed for %s", err.Error()))
+	}
+	node.NodeAddress = realAddress
 }
 
 func (node *defaultNode) AdvertiseService(service string, reqType reflect.Type, resType reflect.Type, callback interface{}) (*ServiceServer, error) {
-	return nil, nil
+	if len(service) <= 0 {
+		panic("AdvertiseService failed, service cannot be empty")
+	}
+	server := NewServiceServer(node, service, resType, resType, callback)
+	err := node.ssm.RegisterServer(server)
+	if err != nil {
+		return nil, err
+	}
+	return server, nil
 }
 
 func (node *defaultNode) ServiceClient(service string, reqType reflect.Type, resType reflect.Type) (*ServiceClient, error) {
