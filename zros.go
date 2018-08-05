@@ -1,5 +1,12 @@
 package zros_go
 
+import (
+	"github.com/golang/protobuf/proto"
+	"reflect"
+)
+
+var msgType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+
 var gsd *GrpcServiceDiscovery
 
 func Init(masterAddress string) (err error){
@@ -15,12 +22,9 @@ func GetGlobalServiceDiscovery () *GrpcServiceDiscovery {
 }
 
 
-type Message interface {
-
-}
 
 type Publisher interface {
-	Publisher(msg Message)
+	Publisher(msg proto.Message)
 }
 
 type ServiceClient interface {
@@ -37,9 +41,9 @@ type Subscriber interface {
 
 type Node interface {
 	Spin()
-	AdvertiseService(service string, reqType Message, resType Message, callback interface{}) (ServiceServer, error)
-	ServiceClient(service string, reqType Message, resType Message) (ServiceClient, error)
-	Advertise(topic string, msgType Message) (Publisher, error)
-	Subscriber(topic string, msgType Message, callback interface{}) (Subscriber, error)
+	AdvertiseService(service string, reqType proto.Message, resType proto.Message, callback interface{}) (ServiceServer, error)
+	ServiceClient(service string, reqType proto.Message, resType proto.Message) (ServiceClient, error)
+	Advertise(topic string, msgType proto.Message) (Publisher, error)
+	Subscriber(topic string, msgType proto.Message, callback interface{}) (Subscriber, error)
 }
 

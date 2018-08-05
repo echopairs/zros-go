@@ -1,19 +1,38 @@
 package zros_go
 
 import (
-	"sync"
-	"context"
-
 	pb "zros-go/zros_rpc"
-
-	"github.com/astaxie/beego/logs"
-	"net"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"reflect"
+	"github.com/golang/protobuf/proto"
+	"fmt"
 )
 
 type ServiceServer struct {
 	serviceName  string
+	serviceCb    reflect.Value
+	reqType 	 reflect.Type
+	resType 	 reflect.Type
+	node 		 *defaultNode
+}
+
+func NewServiceServer(node *defaultNode, service string, resType reflect.Type, repType reflect.Type, serviceCb interface{}) *ServiceServer{
+
+	if resType.Implements(msgType) || resType.Implements(msgType) {
+		panic("NesServiceServer reqType and resType requires a proto")
+	}
+	// check serviceCb
+	fv := reflect.ValueOf(serviceCb)
+	ft := fv.Type()
+	if ft.Kind() != reflect.Func {
+		panic(fmt.Sprintf("NewServiceServer serviceCb requires a function"))
+	}
+	server := &ServiceServer{}
+	server.serviceName = service
+	server.resType = repType
+	server.reqType = resType
+	server.serviceCb = reflect.ValueOf(serviceCb)
+	server.node = node
+	return server
 }
 
 func (ss *ServiceServer) GetServiceName() string {
@@ -21,84 +40,48 @@ func (ss *ServiceServer) GetServiceName() string {
 }
 
 func (ss *ServiceServer) Invoke(request *pb.ServiceRequest) (*pb.ServiceResponse, error) {
-	return nil, nil
-}
+	requestData := request.RequestData
+	response := new(pb.ServiceResponse)
 
-type ServiceServerManager interface {
-	Start() error
-	Stop()
-	RegisterServer(server *IServiceServer) (error)
-	UnregisterServer(serviceName string) (error)
-}
+	var in []reflect.Value
+	var iv reflect.Value
+	if ss.reqType.Implements(msgType) {
+		iv = reflect.New(ss.reqType.Elem())		// new value
+		iv.Elem().Set(reflect.Zero(ss.reqType.Elem()))
+		in = append(in, iv.Elem())
+	} else {
+		iv = reflect.New(ss.reqType)
+		in = append(in, iv.Elem())
+	}
 
-type GrpcServerImpl struct {
-	ServiceAddress string
-	mutex 		  sync.RWMutex
-	servers 	  map[string]*ServiceServer
-	lis  		  net.Listener
-}
-
-func (gsi *GrpcServerImpl) Start() error {
-	lis, err := net.Listen("tcp", "127.0.0.1:")
+	imsg := (iv.Interface()).(proto.Message)
+	err := proto.Unmarshal(requestData, imsg)
 	if err != nil {
-		logs.Error("GrpcServerImpl Start Listen error %v", err)
-		return err
+		response.Status.Code = pb.Status_INVALID_ARGUMENT
+		response.Status.Details = err.Error()
+		return response, nil
 	}
-	gsi.ServiceAddress = lis.Addr().String()
-	gsd.lis = lis
-	go gsi.serve()
-	return nil
-}
 
-func (gsi *GrpcServerImpl) serve() {
-	s := grpc.NewServer()
-	pb.RegisterServiceRPCServer(s, &GrpcServerImpl{})
+	responseData := ss.serviceCb.Call(in)
 
-	// Register reflection service on gRPC server.
-	reflection.Register(s)
-	if err := s.Serve(gsi.lis); err != nil {
-		logs.Error("failed to serve: %v", err)
+	var res interface{}
+	if ss.resType.Implements(msgType) {
+		ov := reflect.New(ss.resType)
+		ov.Elem().Set(responseData[0])
+		res = ov.Elem().Interface()
+	} else {
+		ov := reflect.New(ss.resType)
+		ov.Elem().Set(responseData[0])
+		res = ov.Interface()
 	}
-}
-
-
-func (gsi *GrpcServerImpl) Stop() {
-
-}
-
-func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) (error) {
-	gsi.mutex.Lock()
-	defer gsi.mutex.Unlock()
-	serviceName := server.GetServiceName()
-	_, ok := gsi.servers[serviceName]
-	if ok {
-		logs.Warn("%s already register", serviceName)
-	}
-	gsi.servers[serviceName] = server
-	return nil
-}
-
-func (gsi *GrpcServerImpl) UnregisterServer(serviceName string) (error) {
-	gsi.mutex.Lock()
-	defer gsi.mutex.Unlock()
-	_, ok := gsi.servers[serviceName]
-	if ok {
-		delete(gsi.servers, serviceName)
-	}
-	return nil
-}
-
-func (gsi *GrpcServerImpl) InvokeService(ctx context.Context, request *pb.ServiceRequest) (*pb.ServiceResponse, error) {
-	serviceName := request.GetServiceName()
-	logs.Info("receiver rpc call %s ", serviceName)
-	gsi.mutex.Lock()
-	defer gsi.mutex.Unlock()
-	server, ok := gsi.servers[serviceName]
+	msg, ok := res.(proto.Message)
 	if !ok {
-		res := &pb.ServiceResponse{}
-		res.Status.Code = pb.Status_FAILED_PRECONDITION
-		res.Status.Details = "There is no server for this service " + serviceName
-		return res, nil
+		panic("result is not a proto")
 	}
-	return server.Invoke(request)
+	response.ResponseData, err = proto.Marshal(msg)
+	if err != nil {
+		response.Status.Code = pb.Status_UNKNOWN
+		response.Status.Details = err.Error()
+	}
+	return response, nil
 }

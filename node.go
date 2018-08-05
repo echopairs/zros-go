@@ -1,5 +1,9 @@
 package zros_go
 
+import (
+	"reflect"
+)
+
 // *defaultNode implements Node interface
 type defaultNode struct {
 	NodeAddress 	string
@@ -20,18 +24,18 @@ func (node *defaultNode) Spin() {
 
 }
 
-func (node *defaultNode) AdvertiseService(service string, reqType Message, resType Message, callback interface{}) (ServiceServer, error) {
+func (node *defaultNode) AdvertiseService(service string, reqType reflect.Type, resType reflect.Type, callback interface{}) (*ServiceServer, error) {
 	return nil, nil
 }
 
-func (node *defaultNode) ServiceClient(service string, reqType Message, resType Message) (ServiceClient, error) {
+func (node *defaultNode) ServiceClient(service string, reqType reflect.Type, resType reflect.Type) (*ServiceClient, error) {
 	return nil, nil
 }
 
-func (node *defaultNode) Advertise(topic string, msgType Message) (Publisher, error) {
+func (node *defaultNode) Advertise(topic string, msgType reflect.Type) (Publisher, error) {
 	return nil, nil
 }
 
-func (node *defaultNode) Subscriber(topic string, msgType Message, callback interface{}) (Subscriber, error) {
+func (node *defaultNode) Subscriber(topic string, msgType reflect.Type, callback interface{}) (Subscriber, error) {
 	return nil, nil
 }
