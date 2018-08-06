@@ -15,9 +15,9 @@ type ServiceServer struct {
 	node 		 *defaultNode
 }
 
-func NewServiceServer(node *defaultNode, service string, resType reflect.Type, reqType reflect.Type, serviceCb interface{}) *ServiceServer{
+func NewServiceServer(node *defaultNode, service string, reqType reflect.Type, resType reflect.Type, serviceCb interface{}) *ServiceServer{
 
-	if resType.Implements(msgType) || resType.Implements(msgType) {
+	if resType.Elem().Implements(msgType) || resType.Elem().Implements(msgType) {
 		panic("NesServiceServer reqType and resType requires a proto")
 	}
 	// check serviceCb
@@ -42,7 +42,6 @@ func (ss *ServiceServer) GetServiceName() string {
 func (ss *ServiceServer) Invoke(request *pb.ServiceRequest) (*pb.ServiceResponse, error) {
 	requestData := request.RequestData
 	response := new(pb.ServiceResponse)
-
 	var in []reflect.Value
 	var iv reflect.Value
 	if ss.reqType.Implements(msgType) {
@@ -53,17 +52,17 @@ func (ss *ServiceServer) Invoke(request *pb.ServiceRequest) (*pb.ServiceResponse
 		iv = reflect.New(ss.reqType)
 		in = append(in, iv.Elem())
 	}
-
 	imsg := (iv.Interface()).(proto.Message)
 	err := proto.Unmarshal(requestData, imsg)
 	if err != nil {
-		response.Status.Code = pb.Status_INVALID_ARGUMENT
-		response.Status.Details = err.Error()
+		status := &pb.Status{}
+
+		status.Code = pb.Status_INVALID_ARGUMENT
+		status.Details = err.Error()
+		response.Status = status
 		return response, nil
 	}
-
 	responseData := ss.serviceCb.Call(in)
-
 	var res interface{}
 	if ss.resType.Implements(msgType) {
 		ov := reflect.New(ss.resType)

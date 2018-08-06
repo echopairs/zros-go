@@ -37,7 +37,7 @@ func (node *defaultNode) AdvertiseService(service string, reqType reflect.Type, 
 	if len(service) <= 0 {
 		panic("AdvertiseService failed, service cannot be empty")
 	}
-	server := NewServiceServer(node, service, resType, resType, callback)
+	server := NewServiceServer(node, service, reqType, resType, callback)
 	err := node.ssm.RegisterServer(server)
 	if err != nil {
 		return nil, err

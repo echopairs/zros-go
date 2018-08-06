@@ -88,7 +88,7 @@ func (gsd *GrpcServiceDiscovery) Ping(ctx context.Context, request *pb.PingReque
 
 func (gsd *GrpcServiceDiscovery) serve() {
 	s := grpc.NewServer()
-	pb.RegisterServiceDiscoveryRPCServer(s, &GrpcServiceDiscovery{})
+	pb.RegisterServiceDiscoveryRPCServer(s, gsd)
 
 	// Register reflection service on gRPC server.
 	reflection.Register(s)

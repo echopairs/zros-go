@@ -7,8 +7,11 @@ import (
 	"reflect"
 )
 
-func ServiceCb(req *zros_example.TestServiceRequest) (*zros_example.TestServiceResponse) {
-	return nil
+func ServiceCb(req zros_example.TestServiceRequest) (*zros_example.TestServiceResponse) {
+	logs.Info("service cb")
+	logs.Info("req is %s", req.Detail)
+	res := &zros_example.TestServiceResponse{}
+	return res
 }
 
 func main() {
@@ -23,8 +26,8 @@ func main() {
 	node := zros.NewDefaultNode("example_service_server")
 
 	// 3. create server
-	reqType := reflect.TypeOf(zros_example.TestServiceRequest{})
-	resType := reflect.TypeOf(zros_example.TestServiceResponse{})
+	reqType := reflect.TypeOf(&zros_example.TestServiceRequest{})
+	resType := reflect.TypeOf(&zros_example.TestServiceResponse{})
 	node.AdvertiseService("test_service", reqType, resType, ServiceCb)
 
 	c := make(chan interface{})

@@ -48,7 +48,7 @@ func (gsi *GrpcServerImpl) Start() (string, error) {
 
 func (gsi *GrpcServerImpl) serve() {
 	s := grpc.NewServer()
-	pb.RegisterServiceRPCServer(s, &GrpcServerImpl{})
+	pb.RegisterServiceRPCServer(s, gsi)
 
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
@@ -95,10 +95,8 @@ func (gsi *GrpcServerImpl) UnregisterServer(serviceName string) (error) {
 
 func (gsi *GrpcServerImpl) InvokeService(ctx context.Context, request *pb.ServiceRequest) (*pb.ServiceResponse, error) {
 	serviceName := request.GetServiceName()
-	logs.Info("receiver rpc call %s ", serviceName)
 	gsi.mutex.Lock()
 	defer gsi.mutex.Unlock()
-	logs.Info(len(gsi.servers))
 	server, ok := gsi.servers[serviceName]
 	if !ok {
 		res := &pb.ServiceResponse{}
