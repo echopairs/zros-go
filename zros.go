@@ -22,8 +22,6 @@ func GetGlobalServiceDiscovery () *GrpcServiceDiscovery {
 	return gsd
 }
 
-
-
 type Publisher interface {
 	Publisher(msg proto.Message)
 }

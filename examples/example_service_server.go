@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-func ServiceCb(req zros_example.TestServiceRequest) (*zros_example.TestServiceResponse) {
+func ServiceCb(req *zros_example.TestServiceRequest) (*zros_example.TestServiceResponse) {
 	logs.Info("service cb")
 	logs.Info("req is %s", req.Detail)
 	res := &zros_example.TestServiceResponse{}

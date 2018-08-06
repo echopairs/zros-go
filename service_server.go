@@ -47,7 +47,7 @@ func (ss *ServiceServer) Invoke(request *pb.ServiceRequest) (*pb.ServiceResponse
 	if ss.reqType.Implements(msgType) {
 		iv = reflect.New(ss.reqType.Elem())		// new value
 		iv.Elem().Set(reflect.Zero(ss.reqType.Elem()))
-		in = append(in, iv.Elem())
+		in = append(in, iv)
 	} else {
 		iv = reflect.New(ss.reqType)
 		in = append(in, iv.Elem())
