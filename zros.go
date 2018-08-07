@@ -26,9 +26,9 @@ type Publisher interface {
 	Publisher(msg proto.Message)
 }
 
-type ServiceClient interface {
-	Call() error
-}
+//type IServiceClient interface {
+//	Call() error
+//}
 
 type IServiceServer interface {
 	GetServiceName() string

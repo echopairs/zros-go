@@ -77,6 +77,7 @@ func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) (error) {
 	_, ok := gsi.servers[serviceName]
 	if ok {
 		logs.Warn("%s already register", serviceName)
+		return nil
 	}
 	gsi.servers[serviceName] = server
 	logs.Info("RegisterServer %s ok", serviceName)
