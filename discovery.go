@@ -62,6 +62,12 @@ func (gsd *GrpcServiceDiscovery) SetRegisterServiceServerCb(callback interface{}
 	return nil
 }
 
+func (gsd *GrpcServiceDiscovery) SetRegisterPublisherCb(callback interface{}) error {
+	// todo check callback
+	gsd.drpCb = callback
+	return nil
+}
+
 func (gsd *GrpcServiceDiscovery) Spin() error {
 	lis, err := net.Listen("tcp", "127.0.0.1:")
 	if err != nil {
@@ -76,9 +82,23 @@ func (gsd *GrpcServiceDiscovery) Spin() error {
 }
 
 
-func (gsd *GrpcServiceDiscovery) RegisterPublisher(context.Context, *pb.PublisherInfo) (*pb.Status, error) {
+func (gsd *GrpcServiceDiscovery) RegisterPublisher(ctx context.Context, info *pb.PublisherInfo) (*pb.Status, error) {
+	logs.Info("receive register publisher %s ", info.Topic)
+	status := &pb.Status{}
+	fun := reflect.ValueOf(gsd.drpCb)
+	in := make([]reflect.Value, 2)
+	in[0] = reflect.ValueOf(info)
+	in[1] = reflect.ValueOf(status)
 
-	return nil, nil
+	var result [] reflect.Value
+	result = fun.Call(in)
+	var err error
+	err = nil
+	e := result[0].Interface()
+	if e != nil {
+		err = e.(error)
+	}
+	return status, err
 }
 
 func (gsd *GrpcServiceDiscovery) UnregisterPublisher(context.Context, *pb.PublisherInfo) (*pb.Status, error) {
@@ -215,5 +235,23 @@ func (gsd *GrpcServiceDiscovery) AddPublisher(pub *Publisher) (error) {
 }
 
 func (gsd *GrpcServiceDiscovery) AddSubscriber(sub *Subscriber) (error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
+	defer cancel()
+	request := &pb.SubscriberInfo{}
+	physicalNodeInfo := &pb.PhysicalNodeInfo{}
+	request.Topic = sub.GetTopic()
+	physicalNodeInfo.AgentAddress = gsd.agentAddress
+	request.PhysicalNodeInfo = physicalNodeInfo
+	status, err := gsd.masterRpcStub.RegisterSubscriber(ctx, request)
+
+	if err != nil {
+		logs.Error(fmt.Sprintf("AddSubscriber %s to master failed for %s", sub.GetTopic(), err.Error()))
+		return err
+	}
+
+	if status.Code != pb.Status_OK {
+		logs.Error(fmt.Sprintf("AddSubscriber %s to master failed for %s", sub.GetTopic(), status.Details))
+		return &DiscoveryError{detail:status.Details}
+	}
 	return nil
 }

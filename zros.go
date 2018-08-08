@@ -22,22 +22,6 @@ func GetGlobalServiceDiscovery () *GrpcServiceDiscovery {
 	return gsd
 }
 
-//type Publisher interface {
-//	Publisher(msg proto.Message)
-//}
-//
-////type IServiceClient interface {
-////	Call() error
-////}
-//
-//type IServiceServer interface {
-//	GetServiceName() string
-//}
-//
-type Subscriber interface {
-
-}
-
 type Node interface {
 	Spin()
 	AdvertiseService(service string, reqType proto.Message, resType proto.Message, callback interface{}) (ServiceServer, error)

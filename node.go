@@ -14,6 +14,7 @@ type defaultNode struct {
 	ssm 			ServiceServerManager
 	scm 			ServiceClientManager
 	pm 				PublisherManager
+	sm 				SubscriberManager
 }
 
 func NewDefaultNode(nodeName string) *defaultNode {
@@ -23,6 +24,7 @@ func NewDefaultNode(nodeName string) *defaultNode {
 	node.ssm = NewGrpcServerImpl()
 	node.scm = NewServiceClientsImpl()
 	node.pm = NewPublishersImpl()
+	node.sm = NewSubscribersImpl()
 	node.Spin()
 	return node
 }
@@ -75,8 +77,16 @@ func (node *defaultNode) Advertise(topic string, msgType reflect.Type) (*Publish
 	return publisher, nil
 }
 
-func (node *defaultNode) Subscriber(topic string, msgType reflect.Type, callback interface{}) (Subscriber, error) {
-	return nil, nil
+func (node *defaultNode) Subscriber(topic string, msgType reflect.Type, callback interface{}) (*Subscriber, error) {
+	if len(topic) <= 0 {
+		panic("Subscriber failed, topic cannot be empty")
+	}
+	subscriber := NewSubscriber(node, topic, msgType, callback)
+	err := node.sm.RegisterSubscriber(subscriber)
+	if err != nil {
+		return nil, err
+	}
+	return subscriber, nil
 }
 
 func (node *defaultNode) Call(serviceName string , content []byte, timeout int) (*pb.ServiceResponse, error){
