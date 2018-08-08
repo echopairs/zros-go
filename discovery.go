@@ -68,7 +68,7 @@ func (gsd *GrpcServiceDiscovery) Spin() error {
 		logs.Error("Grpc Service Discovery Spin Listen error %v", err)
 		return err
 	}
-	logs.Info("the address is %s", lis.Addr().String())
+	//logs.Info("the address is %s", lis.Addr().String())
 	gsd.agentAddress = lis.Addr().String()
 	gsd.lis = lis
 	go gsd.serve()
@@ -169,7 +169,6 @@ func (gsd *GrpcServiceDiscovery) AddServiceServer(server *ServiceServer) (error)
 
 func (gsd *GrpcServiceDiscovery) AddServiceClient(client *ServiceClient) (error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
-	logs.Info("AddServiceClient to master")
 	defer cancel()
 	request := &pb.ServiceClientInfo{}
 	physicalNodeInfo := &pb.PhysicalNodeInfo{}
@@ -189,5 +188,32 @@ func (gsd *GrpcServiceDiscovery) AddServiceClient(client *ServiceClient) (error)
 		logs.Error(fmt.Sprintf("AddServiceClient %s to master failed for %s", client.GetServiceName(), status.Details))
 		return &DiscoveryError{detail:status.Details}
 	}
+	return nil
+}
+
+func (gsd *GrpcServiceDiscovery) AddPublisher(pub *Publisher) (error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
+	defer cancel()
+	request := &pb.PublisherInfo{}
+	physicalNodeInfo := &pb.PhysicalNodeInfo{}
+	request.Topic = pub.GetTopic()
+	physicalNodeInfo.AgentAddress = gsd.agentAddress
+	physicalNodeInfo.RealAddress = pub.GetAddress()
+	request.PhysicalNodeInfo = physicalNodeInfo
+	status, err := gsd.masterRpcStub.RegisterPublisher(ctx, request)
+
+	if err != nil {
+		logs.Error(fmt.Sprintf("AddPublisher %s to master failed for %s", pub.GetTopic(), err.Error()))
+		return err
+	}
+
+	if status.Code != pb.Status_OK {
+		logs.Error(fmt.Sprintf("AddPublisher %s to master failed for %s", pub.GetTopic(), status.Details))
+		return &DiscoveryError{detail:status.Details}
+	}
+	return nil
+}
+
+func (gsd *GrpcServiceDiscovery) AddSubscriber(sub *Subscriber) (error) {
 	return nil
 }

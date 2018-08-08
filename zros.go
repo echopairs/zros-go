@@ -22,18 +22,18 @@ func GetGlobalServiceDiscovery () *GrpcServiceDiscovery {
 	return gsd
 }
 
-type Publisher interface {
-	Publisher(msg proto.Message)
-}
-
-//type IServiceClient interface {
-//	Call() error
+//type Publisher interface {
+//	Publisher(msg proto.Message)
 //}
-
-type IServiceServer interface {
-	GetServiceName() string
-}
-
+//
+////type IServiceClient interface {
+////	Call() error
+////}
+//
+//type IServiceServer interface {
+//	GetServiceName() string
+//}
+//
 type Subscriber interface {
 
 }

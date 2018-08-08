@@ -11,7 +11,6 @@ import (
 
 func main() {
 
-
 	// 1. init & run service discovery
 	err := zros.Init("localhost:23333")
 	if err != nil {

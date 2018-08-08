@@ -2,8 +2,6 @@ package zros_go
 
 import (
 	"reflect"
-	"log"
-
 	pb "zros-go/zros_rpc"
 
 	"github.com/golang/protobuf/proto"
@@ -33,7 +31,7 @@ func NewServiceClient(node *defaultNode, service string, reqType reflect.Type, r
 
 func (sc *ServiceClient) Call(request proto.Message, timeout int) (proto.Message, *pb.Status) {
 	if reflect.TypeOf(request) != sc.reqType {
-		log.Fatalf("call  %s service failed request type must be %s", sc.serviceName, sc.reqType.String())
+		logs.Error("call  %s service failed request type must be %s", sc.serviceName, sc.reqType.String())
 		panic("request must be match")
 	}
 
@@ -45,7 +43,7 @@ func (sc *ServiceClient) Call(request proto.Message, timeout int) (proto.Message
 	}
 	content, err := proto.Marshal(request)
 	if err != nil {
-		panic("request is not a proto")
+		panic("request message is not a proto")
 	}
 	status.Code = pb.Status_OK
 	response, err := sc.node.Call(sc.serviceName, content, timeout)
