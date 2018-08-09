@@ -4,16 +4,16 @@ import (
 	"reflect"
 	pb "zros-go/zros_rpc"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/astaxie/beego/logs"
+	"github.com/golang/protobuf/proto"
 )
 
 type ServiceClient struct {
-	serviceName		string
-	reqType			reflect.Type
-	resType 		reflect.Type
-	node 			*defaultNode
-	ready 			bool
+	serviceName string
+	reqType     reflect.Type
+	resType     reflect.Type
+	node        *defaultNode
+	ready       bool
 }
 
 func NewServiceClient(node *defaultNode, service string, reqType reflect.Type, resType reflect.Type) *ServiceClient {

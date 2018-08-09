@@ -9,7 +9,7 @@ var msgType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 
 var gsd *GrpcServiceDiscovery
 
-func Init(masterAddress string) (err error){
+func Init(masterAddress string) (err error) {
 	gsd, err = NewGrpcServiceDiscovery(masterAddress)
 	if err != nil {
 		return err
@@ -18,7 +18,7 @@ func Init(masterAddress string) (err error){
 	return gsd.IsConnectedToMaster()
 }
 
-func GetGlobalServiceDiscovery () *GrpcServiceDiscovery {
+func GetGlobalServiceDiscovery() *GrpcServiceDiscovery {
 	return gsd
 }
 
@@ -29,4 +29,3 @@ type Node interface {
 	Advertise(topic string, msgType proto.Message) (Publisher, error)
 	Subscriber(topic string, msgType proto.Message, callback interface{}) (Subscriber, error)
 }
-

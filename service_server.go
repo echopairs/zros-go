@@ -1,21 +1,21 @@
 package zros_go
 
 import (
-	pb "zros-go/zros_rpc"
-	"reflect"
-	"github.com/golang/protobuf/proto"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"reflect"
+	pb "zros-go/zros_rpc"
 )
 
 type ServiceServer struct {
-	serviceName  string
-	serviceCb    reflect.Value
-	reqType 	 reflect.Type
-	resType 	 reflect.Type
-	node 		 *defaultNode
+	serviceName string
+	serviceCb   reflect.Value
+	reqType     reflect.Type
+	resType     reflect.Type
+	node        *defaultNode
 }
 
-func NewServiceServer(node *defaultNode, service string, reqType reflect.Type, resType reflect.Type, serviceCb interface{}) *ServiceServer{
+func NewServiceServer(node *defaultNode, service string, reqType reflect.Type, resType reflect.Type, serviceCb interface{}) *ServiceServer {
 
 	if resType.Elem().Implements(msgType) || resType.Elem().Implements(msgType) {
 		panic("NesServiceServer reqType and resType requires a proto")
@@ -45,7 +45,7 @@ func (ss *ServiceServer) Invoke(request *pb.ServiceRequest) (*pb.ServiceResponse
 	var in []reflect.Value
 	var iv reflect.Value
 	if ss.reqType.Implements(msgType) {
-		iv = reflect.New(ss.reqType.Elem())		// new value
+		iv = reflect.New(ss.reqType.Elem()) // new value
 		iv.Elem().Set(reflect.Zero(ss.reqType.Elem()))
 		in = append(in, iv)
 	} else {

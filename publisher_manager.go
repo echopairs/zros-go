@@ -1,29 +1,29 @@
 package zros_go
 
 import (
-	"sync"
-	zmq "github.com/pebbe/zmq4"
-	"github.com/astaxie/beego/logs"
 	"errors"
+	"github.com/astaxie/beego/logs"
+	zmq "github.com/pebbe/zmq4"
+	"sync"
 )
 
 type PublisherManager interface {
-	RegisterPublisher(publisher *Publisher) (error)
-	UnregisterPublisher(topic string) (error)
-	Publish(topic string, content []byte) (error)
+	RegisterPublisher(publisher *Publisher) error
+	UnregisterPublisher(topic string) error
+	Publish(topic string, content []byte) error
 }
 
 type PubStub interface {
-	Publish([]byte) (error)
+	Publish([]byte) error
 	GetAddress() string
 	Stop()
 }
 
 type ZmqPubStub struct {
-	address	string
-	topic 	string
+	address string
+	topic   string
 	sync.Mutex
-	sock 	*zmq.Socket
+	sock *zmq.Socket
 }
 
 func NewZmqPubStub(topic string) (*ZmqPubStub, string) {
@@ -43,9 +43,9 @@ func NewZmqPubStub(topic string) (*ZmqPubStub, string) {
 	logs.Info("bind success on address %s ", address)
 
 	stub := &ZmqPubStub{
-		topic:topic,
-		address:address,
-		sock:sock,
+		topic:   topic,
+		address: address,
+		sock:    sock,
 	}
 	return stub, address
 }
@@ -66,17 +66,17 @@ func (stub *ZmqPubStub) Stop() {
 }
 
 type PublishersImpl struct {
-	pubsMutex	sync.Mutex
-	publishers 	map[string]PubStub
+	pubsMutex  sync.Mutex
+	publishers map[string]PubStub
 }
 
 func NewPublishersImpl() *PublishersImpl {
 	return &PublishersImpl{
-		publishers:make(map[string]PubStub),
+		publishers: make(map[string]PubStub),
 	}
 }
 
-func (impl *PublishersImpl)RegisterPublisher(publisher *Publisher) (error) {
+func (impl *PublishersImpl) RegisterPublisher(publisher *Publisher) error {
 	// 1. register to memory first to gen address
 	impl.addToMemory(publisher)
 	// 2. register to master
@@ -103,7 +103,7 @@ func (impl *PublishersImpl) addToMemory(publisher *Publisher) {
 	publisher.SetAddress(address)
 }
 
-func (impl *PublishersImpl) UnregisterPublisher(topic string) (error) {
+func (impl *PublishersImpl) UnregisterPublisher(topic string) error {
 	impl.pubsMutex.Lock()
 	defer impl.pubsMutex.Unlock()
 	stub, ok := impl.publishers[topic]
@@ -114,7 +114,7 @@ func (impl *PublishersImpl) UnregisterPublisher(topic string) (error) {
 	return nil
 }
 
-func (impl *PublishersImpl) Publish(topic string, content []byte) (error) {
+func (impl *PublishersImpl) Publish(topic string, content []byte) error {
 	impl.pubsMutex.Lock()
 	defer impl.pubsMutex.Unlock()
 	pub, ok := impl.publishers[topic]

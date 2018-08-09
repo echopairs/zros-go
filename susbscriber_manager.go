@@ -1,13 +1,13 @@
 package zros_go
 
 import (
-	"sync"
 	zmq "github.com/pebbe/zmq4"
+	"sync"
 
-	pb "zros-go/zros_rpc"
 	"context"
 	"github.com/astaxie/beego/logs"
 	"reflect"
+	pb "zros-go/zros_rpc"
 )
 
 type SubscriberManager interface {
@@ -23,17 +23,17 @@ type SubStub interface {
 }
 
 type ZmqSubStub struct {
-	topic 		string
-	pubMutex 	sync.Mutex
-	pubAddress	map[string]int
-	sock 		*zmq.Socket
-	ctx 		context.Context
-	cancel      context.CancelFunc
+	topic      string
+	pubMutex   sync.Mutex
+	pubAddress map[string]int
+	sock       *zmq.Socket
+	ctx        context.Context
+	cancel     context.CancelFunc
 
-	runMutex	sync.Mutex
-	running 	bool
+	runMutex sync.Mutex
+	running  bool
 
-	callback 	reflect.Value
+	callback reflect.Value
 }
 
 func NewZmqSubStub(topic string, callback reflect.Value) *ZmqSubStub {
@@ -44,12 +44,12 @@ func NewZmqSubStub(topic string, callback reflect.Value) *ZmqSubStub {
 	}
 
 	return &ZmqSubStub{
-		topic:topic,
-		callback:callback,
-		pubAddress:make(map[string]int),
-		ctx:ctx,
-		cancel:cancel,
-		sock:sock,
+		topic:      topic,
+		callback:   callback,
+		pubAddress: make(map[string]int),
+		ctx:        ctx,
+		cancel:     cancel,
+		sock:       sock,
 	}
 }
 
@@ -96,7 +96,7 @@ func (stub *ZmqSubStub) RemovePublisher(address string) error {
 	return nil
 }
 
-func (stub *ZmqSubStub)receiveMessage (ctx context.Context) {
+func (stub *ZmqSubStub) receiveMessage(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -104,7 +104,7 @@ func (stub *ZmqSubStub)receiveMessage (ctx context.Context) {
 			stub.sock.Close()
 			return
 		default:
-		    data, _ := stub.sock.RecvBytes(0)
+			data, _ := stub.sock.RecvBytes(0)
 			in := make([]reflect.Value, 1)
 			in[0] = reflect.ValueOf(data)
 			go stub.callback.Call(in)
@@ -114,18 +114,18 @@ func (stub *ZmqSubStub)receiveMessage (ctx context.Context) {
 }
 
 type SubPair struct {
-	sub		*Subscriber
-	stub 	SubStub
+	sub  *Subscriber
+	stub SubStub
 }
 
 type SubscribersImpl struct {
-	subscriberMutex 	sync.Mutex
-	subscribers 		map[string]*SubPair
+	subscriberMutex sync.Mutex
+	subscribers     map[string]*SubPair
 }
 
-func NewSubscribersImpl () *SubscribersImpl {
+func NewSubscribersImpl() *SubscribersImpl {
 	impl := &SubscribersImpl{
-		subscribers:make(map[string]*SubPair),
+		subscribers: make(map[string]*SubPair),
 	}
 	gsd := GetGlobalServiceDiscovery()
 	registerPublisherCallback := func(info *pb.PublisherInfo, status *pb.Status) error {
@@ -161,7 +161,7 @@ func (impl *SubscribersImpl) addToMemory(subscriber *Subscriber) {
 		panic("cannot register same subscriber")
 	}
 
-	callback := func (in []byte) {
+	callback := func(in []byte) {
 		subscriber.HandleRawMessage(in)
 	}
 
@@ -204,5 +204,3 @@ func (impl *SubscribersImpl) UnregisterPublisher(info *pb.PublisherInfo, status 
 	// todo
 	return nil
 }
-
-

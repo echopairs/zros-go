@@ -1,22 +1,22 @@
 package zros_go
 
 import (
-	pb "zros-go/zros_rpc"
+	"context"
+	"errors"
+	"fmt"
+	"github.com/astaxie/beego/logs"
 	"google.golang.org/grpc"
 	"sync"
-	"github.com/astaxie/beego/logs"
-	"errors"
 	"time"
-	"context"
-	"fmt"
+	pb "zros-go/zros_rpc"
 )
 
-var rpcStubCallShortTimeOut = 5*1000*1000
-var rpcStubCallLongTimeOut = 3000*1000*1000
+var rpcStubCallShortTimeOut = 5 * 1000 * 1000
+var rpcStubCallLongTimeOut = 3000 * 1000 * 1000
 
 type ServiceClientManager interface {
-	RegisterClient(client *ServiceClient) (error)
-	UnregisterClient(serviceName string) (error)
+	RegisterClient(client *ServiceClient) error
+	UnregisterClient(serviceName string) error
 	Call(serviceName string, content []byte, timeout int) (*pb.ServiceResponse, error)
 }
 
@@ -26,20 +26,20 @@ type RpcStub interface {
 
 type GrpcStub struct {
 	nodeRpcStub pb.ServiceRPCClient
-	conn 		*grpc.ClientConn
-	address 	string
+	conn        *grpc.ClientConn
+	address     string
 }
 
-func NewGrpcStub (address string) (*GrpcStub, error) {
+func NewGrpcStub(address string) (*GrpcStub, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
 	c := pb.NewServiceRPCClient(conn)
 	stub := &GrpcStub{
-		nodeRpcStub:c,
-		conn:conn,
-		address:address,
+		nodeRpcStub: c,
+		conn:        conn,
+		address:     address,
 	}
 	return stub, nil
 }
@@ -57,21 +57,21 @@ func (gs *GrpcStub) Call(serviceName string, content []byte, timeout int) (*pb.S
 }
 
 type ServiceClientsImpl struct {
-	clientsMutex 	sync.Mutex
-	clients 		map[string]*ServiceClient
+	clientsMutex sync.Mutex
+	clients      map[string]*ServiceClient
 
-	servicesMutex 	sync.Mutex
+	servicesMutex   sync.Mutex
 	servicesAddress map[string]string
 
-	stubsMutex		sync.Mutex
-	stubs			map[string]RpcStub
+	stubsMutex sync.Mutex
+	stubs      map[string]RpcStub
 }
 
 func NewServiceClientsImpl() *ServiceClientsImpl {
 	impl := &ServiceClientsImpl{
-		clients: make(map[string]*ServiceClient),
+		clients:         make(map[string]*ServiceClient),
 		servicesAddress: make(map[string]string),
-		stubs: make(map[string]RpcStub),
+		stubs:           make(map[string]RpcStub),
 	}
 	gsd := GetGlobalServiceDiscovery()
 	registerServiceServerCallback := func(info *pb.ServiceServerInfo, status *pb.Status) error {
@@ -81,7 +81,7 @@ func NewServiceClientsImpl() *ServiceClientsImpl {
 	return impl
 }
 
-func (sci *ServiceClientsImpl) RegisterClient(client *ServiceClient) (error) {
+func (sci *ServiceClientsImpl) RegisterClient(client *ServiceClient) error {
 	// 1. register to memory first
 	sci.addToMemory(client)
 	// 2. register to master
@@ -95,7 +95,7 @@ func (sci *ServiceClientsImpl) RegisterClient(client *ServiceClient) (error) {
 	return nil
 }
 
-func (sci *ServiceClientsImpl) addToMemory(client *ServiceClient)  {
+func (sci *ServiceClientsImpl) addToMemory(client *ServiceClient) {
 	sci.clientsMutex.Lock()
 	defer sci.clientsMutex.Unlock()
 	serviceName := client.GetServiceName()
@@ -107,7 +107,7 @@ func (sci *ServiceClientsImpl) addToMemory(client *ServiceClient)  {
 	sci.clients[serviceName] = client
 }
 
-func (sci *ServiceClientsImpl) UnregisterClient(serviceName string) (error) {
+func (sci *ServiceClientsImpl) UnregisterClient(serviceName string) error {
 	sci.clientsMutex.Lock()
 	defer sci.clientsMutex.Unlock()
 	_, ok := sci.clients[serviceName]
@@ -131,7 +131,7 @@ func (sci *ServiceClientsImpl) Call(serviceName string, content []byte, timeout 
 	return stub.Call(serviceName, content, timeout)
 }
 
-func (sci *ServiceClientsImpl) RegisterServiceClient(serverInfo *pb.ServiceServerInfo, status *pb.Status) (error){
+func (sci *ServiceClientsImpl) RegisterServiceClient(serverInfo *pb.ServiceServerInfo, status *pb.Status) error {
 	serviceName := serverInfo.ServiceName
 	sci.clientsMutex.Lock()
 	defer sci.clientsMutex.Unlock()
@@ -150,7 +150,7 @@ func (sci *ServiceClientsImpl) RegisterServiceClient(serverInfo *pb.ServiceServe
 	return nil
 }
 
-func (sci *ServiceClientsImpl) UnregisterServiceClient(serverInfo *pb.ServiceServerInfo, status *pb.Status) (error){
+func (sci *ServiceClientsImpl) UnregisterServiceClient(serverInfo *pb.ServiceServerInfo, status *pb.Status) error {
 	// todo
 	return nil
 }

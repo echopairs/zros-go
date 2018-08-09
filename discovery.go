@@ -1,29 +1,25 @@
 package zros_go
 
-
 import (
 	"context"
-	"time"
 	"net"
+	"time"
 
+	"github.com/astaxie/beego/logs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"github.com/astaxie/beego/logs"
 
-	pb "zros-go/zros_rpc"
 	"fmt"
 	"reflect"
+	pb "zros-go/zros_rpc"
 )
 
-
-var stubCallShortTimeOut = 5*1000*1000
-var stubCallLongTimeOut = 3000*1000*1000
-
-
+var stubCallShortTimeOut = 5 * 1000 * 1000
+var stubCallLongTimeOut = 3000 * 1000 * 1000
 
 type DiscoveryError struct {
 	errorCode int
-	detail string
+	detail    string
 }
 
 func (de *DiscoveryError) Error() string {
@@ -31,17 +27,16 @@ func (de *DiscoveryError) Error() string {
 }
 
 type GrpcServiceDiscovery struct {
-	masterRpcStub 	pb.MasterRPCClient
-	conn 			*grpc.ClientConn
-	agentAddress	string
-	lis 			net.Listener
+	masterRpcStub pb.MasterRPCClient
+	conn          *grpc.ClientConn
+	agentAddress  string
+	lis           net.Listener
 
-	drssCb			interface{}	// deal register service server cb
-	dussCb			interface{}	// deal unregister service server cb
-	drpCb			interface{}	// deal register publisher cb
-	dupCb			interface{}	// deal unregister publisher cb
+	drssCb interface{} // deal register service server cb
+	dussCb interface{} // deal unregister service server cb
+	drpCb  interface{} // deal register publisher cb
+	dupCb  interface{} // deal unregister publisher cb
 }
-
 
 func NewGrpcServiceDiscovery(masterAddress string) (*GrpcServiceDiscovery, error) {
 	conn, err := grpc.Dial(masterAddress, grpc.WithInsecure())
@@ -50,8 +45,8 @@ func NewGrpcServiceDiscovery(masterAddress string) (*GrpcServiceDiscovery, error
 	}
 	c := pb.NewMasterRPCClient(conn)
 	gsd := &GrpcServiceDiscovery{
-		masterRpcStub:c,
-		conn:conn,
+		masterRpcStub: c,
+		conn:          conn,
 	}
 	return gsd, nil
 }
@@ -81,7 +76,6 @@ func (gsd *GrpcServiceDiscovery) Spin() error {
 	return nil
 }
 
-
 func (gsd *GrpcServiceDiscovery) RegisterPublisher(ctx context.Context, info *pb.PublisherInfo) (*pb.Status, error) {
 	logs.Info("receive register publisher %s ", info.Topic)
 	status := &pb.Status{}
@@ -90,7 +84,7 @@ func (gsd *GrpcServiceDiscovery) RegisterPublisher(ctx context.Context, info *pb
 	in[0] = reflect.ValueOf(info)
 	in[1] = reflect.ValueOf(status)
 
-	var result [] reflect.Value
+	var result []reflect.Value
 	result = fun.Call(in)
 	var err error
 	err = nil
@@ -113,7 +107,7 @@ func (gsd *GrpcServiceDiscovery) RegisterServiceServer(ctx context.Context, info
 	in[0] = reflect.ValueOf(info)
 	in[1] = reflect.ValueOf(status)
 
-	var result [] reflect.Value
+	var result []reflect.Value
 	result = fun.Call(in)
 	var err error
 	err = nil
@@ -157,9 +151,8 @@ func (gsd *GrpcServiceDiscovery) IsConnectedToMaster() error {
 	return nil
 }
 
-
 // register
-func (gsd *GrpcServiceDiscovery) AddServiceServer(server *ServiceServer) (error) {
+func (gsd *GrpcServiceDiscovery) AddServiceServer(server *ServiceServer) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
 	logs.Info("AddServiceServer to master")
 	defer cancel()
@@ -181,13 +174,13 @@ func (gsd *GrpcServiceDiscovery) AddServiceServer(server *ServiceServer) (error)
 
 	if status.Code != pb.Status_OK {
 		logs.Error(fmt.Sprintf("AddServiceServer %s to master failed for %s", server.GetServiceName(), status.Details))
-		return &DiscoveryError{detail:status.Details}
+		return &DiscoveryError{detail: status.Details}
 
 	}
 	return nil
 }
 
-func (gsd *GrpcServiceDiscovery) AddServiceClient(client *ServiceClient) (error) {
+func (gsd *GrpcServiceDiscovery) AddServiceClient(client *ServiceClient) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
 	defer cancel()
 	request := &pb.ServiceClientInfo{}
@@ -206,12 +199,12 @@ func (gsd *GrpcServiceDiscovery) AddServiceClient(client *ServiceClient) (error)
 
 	if status.Code != pb.Status_OK {
 		logs.Error(fmt.Sprintf("AddServiceClient %s to master failed for %s", client.GetServiceName(), status.Details))
-		return &DiscoveryError{detail:status.Details}
+		return &DiscoveryError{detail: status.Details}
 	}
 	return nil
 }
 
-func (gsd *GrpcServiceDiscovery) AddPublisher(pub *Publisher) (error) {
+func (gsd *GrpcServiceDiscovery) AddPublisher(pub *Publisher) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
 	defer cancel()
 	request := &pb.PublisherInfo{}
@@ -229,12 +222,12 @@ func (gsd *GrpcServiceDiscovery) AddPublisher(pub *Publisher) (error) {
 
 	if status.Code != pb.Status_OK {
 		logs.Error(fmt.Sprintf("AddPublisher %s to master failed for %s", pub.GetTopic(), status.Details))
-		return &DiscoveryError{detail:status.Details}
+		return &DiscoveryError{detail: status.Details}
 	}
 	return nil
 }
 
-func (gsd *GrpcServiceDiscovery) AddSubscriber(sub *Subscriber) (error) {
+func (gsd *GrpcServiceDiscovery) AddSubscriber(sub *Subscriber) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stubCallShortTimeOut))
 	defer cancel()
 	request := &pb.SubscriberInfo{}
@@ -251,7 +244,7 @@ func (gsd *GrpcServiceDiscovery) AddSubscriber(sub *Subscriber) (error) {
 
 	if status.Code != pb.Status_OK {
 		logs.Error(fmt.Sprintf("AddSubscriber %s to master failed for %s", sub.GetTopic(), status.Details))
-		return &DiscoveryError{detail:status.Details}
+		return &DiscoveryError{detail: status.Details}
 	}
 	return nil
 }

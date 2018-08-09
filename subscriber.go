@@ -1,17 +1,17 @@
 package zros_go
 
 import (
-	"reflect"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/astaxie/beego/logs"
+	"github.com/golang/protobuf/proto"
+	"reflect"
 )
 
 type Subscriber struct {
-	topic 			string
-	messageCb		reflect.Value
-	messageType		reflect.Type
-	node 			*defaultNode
+	topic       string
+	messageCb   reflect.Value
+	messageType reflect.Type
+	node        *defaultNode
 }
 
 func NewSubscriber(node *defaultNode, topic string, messageType reflect.Type, messageCb interface{}) *Subscriber {

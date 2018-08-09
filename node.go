@@ -1,25 +1,25 @@
 package zros_go
 
 import (
-	"reflect"
 	"fmt"
+	"reflect"
 
 	pb "zros-go/zros_rpc"
 )
 
 // *defaultNode implements Node interface
 type defaultNode struct {
-	NodeAddress 	string
-	NodeName 		string
-	ssm 			ServiceServerManager
-	scm 			ServiceClientManager
-	pm 				PublisherManager
-	sm 				SubscriberManager
+	NodeAddress string
+	NodeName    string
+	ssm         ServiceServerManager
+	scm         ServiceClientManager
+	pm          PublisherManager
+	sm          SubscriberManager
 }
 
 func NewDefaultNode(nodeName string) *defaultNode {
 	node := &defaultNode{
-		NodeName:nodeName,
+		NodeName: nodeName,
 	}
 	node.ssm = NewGrpcServerImpl()
 	node.scm = NewServiceClientsImpl()
@@ -89,10 +89,10 @@ func (node *defaultNode) Subscriber(topic string, msgType reflect.Type, callback
 	return subscriber, nil
 }
 
-func (node *defaultNode) Call(serviceName string , content []byte, timeout int) (*pb.ServiceResponse, error){
+func (node *defaultNode) Call(serviceName string, content []byte, timeout int) (*pb.ServiceResponse, error) {
 	return node.scm.Call(serviceName, content, timeout)
 }
 
-func (node *defaultNode) Publish(topic string, message []byte) (error) {
+func (node *defaultNode) Publish(topic string, message []byte) error {
 	return node.pm.Publish(topic, message)
 }

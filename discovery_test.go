@@ -20,7 +20,7 @@ func TestGrpcServiceDiscovery_IsConnectedToMaster(t *testing.T) {
 }
 
 func TestGrpcServiceDiscovery_Spin(t *testing.T) {
-	gsd, _:= NewGrpcServiceDiscovery(masterAddress)
+	gsd, _ := NewGrpcServiceDiscovery(masterAddress)
 	gsd.Spin()
 }
 

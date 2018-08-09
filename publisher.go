@@ -1,16 +1,16 @@
 package zros_go
 
 import (
-	"reflect"
-	"github.com/golang/protobuf/proto"
 	"github.com/astaxie/beego/logs"
+	"github.com/golang/protobuf/proto"
+	"reflect"
 )
 
 type Publisher struct {
-	topic 			string
-	messageType 	reflect.Type
-	node 			*defaultNode
-	address 		string
+	topic       string
+	messageType reflect.Type
+	node        *defaultNode
+	address     string
 }
 
 func NewPublisher(node *defaultNode, topic string, messageType reflect.Type) *Publisher {
@@ -24,7 +24,7 @@ func NewPublisher(node *defaultNode, topic string, messageType reflect.Type) *Pu
 	return publisher
 }
 
-func (pub *Publisher) Publish(msg proto.Message) (error){
+func (pub *Publisher) Publish(msg proto.Message) error {
 	if reflect.TypeOf(msg) != pub.messageType {
 		logs.Error("publish %s message failed message type must be %s", pub.topic, pub.messageType.String())
 	}

@@ -1,9 +1,9 @@
 package zros_go
 
 import (
-	"sync"
 	"context"
 	"net"
+	"sync"
 
 	"github.com/astaxie/beego/logs"
 	"google.golang.org/grpc"
@@ -12,23 +12,23 @@ import (
 	pb "zros-go/zros_rpc"
 )
 
-var  _ ServiceServerManager = (*GrpcServerImpl)(nil)
+var _ ServiceServerManager = (*GrpcServerImpl)(nil)
 
 type ServiceServerManager interface {
 	Start() (string, error)
 	Stop()
-	RegisterServer(server *ServiceServer) (error)
-	UnregisterServer(serviceName string) (error)
+	RegisterServer(server *ServiceServer) error
+	UnregisterServer(serviceName string) error
 }
 
 type GrpcServerImpl struct {
 	ServiceAddress string
-	mutex 		  sync.RWMutex
-	servers 	  map[string]*ServiceServer
-	lis  		  net.Listener
+	mutex          sync.RWMutex
+	servers        map[string]*ServiceServer
+	lis            net.Listener
 }
 
-func NewGrpcServerImpl() (*GrpcServerImpl){
+func NewGrpcServerImpl() *GrpcServerImpl {
 	return &GrpcServerImpl{
 		servers: make(map[string]*ServiceServer),
 	}
@@ -57,12 +57,11 @@ func (gsi *GrpcServerImpl) serve() {
 	}
 }
 
-
 func (gsi *GrpcServerImpl) Stop() {
 
 }
 
-func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) (error) {
+func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) error {
 	// 1. register to master first
 	gsd := GetGlobalServiceDiscovery()
 	err := gsd.AddServiceServer(server)
@@ -84,7 +83,7 @@ func (gsi *GrpcServerImpl) RegisterServer(server *ServiceServer) (error) {
 	return nil
 }
 
-func (gsi *GrpcServerImpl) UnregisterServer(serviceName string) (error) {
+func (gsi *GrpcServerImpl) UnregisterServer(serviceName string) error {
 	gsi.mutex.Lock()
 	defer gsi.mutex.Unlock()
 	_, ok := gsi.servers[serviceName]
