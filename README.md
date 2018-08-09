@@ -24,7 +24,7 @@ The Go language implementation of zros
     
     3) Use tool `tools\generate.sh` to gen zros-pb.go
 
-    ３) use zros-go in your proj
+    4) use zros-go in your proj
 
 ## Examples
 
